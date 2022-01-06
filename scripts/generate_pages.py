@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Any, DefaultDict, Dict, List
 import requests
+from time import strftime,gmtime
 
 ROOT = Path(__file__).parent.parent.resolve()
 
@@ -93,17 +94,48 @@ def main() -> None:
         repos: DefaultDict[str, List[Package]] = DefaultDict(list)
         packages = json.load(f)
         pkg_count = 0
+
+        search_index = []
+
         for attribute, pkg in packages.items():
             pkg_count += 1
             repos[pkg["_repo"]].append(Package(attribute, pkg))
 
+            search_rec = {}
+            search_rec["attribute"] = attribute
+            search_rec["name"] = pkg["name"]
+            search_rec["pname"] = pkg["pname"]
+            if "description" in pkg["meta"]:
+               search_rec["description"] = pkg["meta"]["description"]
+            else:
+               search_rec["description"] = ""
+
+            if "homepage" in pkg["meta"]:
+               search_rec["homepage"] = pkg["meta"]["homepage"]
+            else:
+               search_rec["homepage"] = ""
+
+            search_rec["position"] = pkg["meta"]["position"]
+            search_rec["repo"] = pkg["_repo"]
+
+            search_index.append(search_rec)
+
         repos_path = ROOT.joinpath("content", "repos")
         create_repos_section()
+
+        search_obj = {}
+        search_obj["index"] = search_index
+        search_obj["last_update"] = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+        search_index_path = ROOT.joinpath("static", "search_index.json")
+        with open(search_index_path, "w+") as f:
+            f.write(json.dumps(search_obj))
+
 
         repo_count = 0
         for repo_name, pkgs in repos.items():
             repo_count += 1
             write_repo_page(repos_path, repo_name, pkgs)
+
 
         stats_dict={'repo_count':repo_count, 'pkg_count': pkg_count}
         stats_path = ROOT.joinpath("data", "stats.json")
