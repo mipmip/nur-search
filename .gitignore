@@ -3,3 +3,4 @@
 /data/stats.json
 /content/documentation/_index.md
 /content/repos/_index.md
+.hugo_build.lock
